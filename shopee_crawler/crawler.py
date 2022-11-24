@@ -7,6 +7,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 import re
 from shopee_crawler import parser
+import csv
 
 class ShopeeCrawler:
     product_keys = [
@@ -30,17 +31,19 @@ class ShopeeCrawler:
         chrome_driver_binary = "/home/ngthuan/Windows/chromedriver"
         self.driver = webdriver.Chrome(chrome_driver_binary, options=options)
 
-    def crawl_by_url(self, search_url):
+    def crawl_by_url(self, search_url, export_file=None):
         print(f'Connecting to {search_url}...')
         self.driver.get(search_url)
-        WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.CLASS_NAME, '_4FDN71')))
+        WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.CLASS_NAME, '_4FDN71'))) #_4FDN71 is a bottom container's class name
 
         # Scroll few times to load all items
-        print('Getting page information...')
+        print('Loading page content...')
         for x in range(30):
             self.driver.execute_script("window.scrollBy(0,300)")
             time.sleep(0.1)
         
+        # Get all products on this page
+        print('Getting products infomation...')
         all_items = self.driver.find_elements(By.XPATH, '//a[@data-sqe="link"]')
         products = []
         for item in all_items:
@@ -48,10 +51,17 @@ class ShopeeCrawler:
             for key in self.product_keys:
                 setattr(sys.modules[__name__], key, getattr(parser, f'parse_{key}_from_element')(item))
                 product[key] = getattr(sys.modules[__name__], key)
-
-            print(product)                
-            print('-'*15)
-            
+            products.append(product)
         print('Found total:',len(all_items), 'items')
+        
+        # Export CSV
+        print('Exporting...')
+        if export_file is not None:
+            with open(export_file, 'w', encoding='utf-8-sig') as csvFile:
+                wr = csv.DictWriter(csvFile, fieldnames=self.product_keys)
+                wr.writeheader()
+                for ele in products:
+                    wr.writerow(ele)     
+            print(f'Exported to <{export_file}>.')
         return products
     

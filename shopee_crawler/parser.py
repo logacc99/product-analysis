@@ -9,7 +9,7 @@ FIELD_CLASS_MAP = {
     'pre_price':        'vioxXd ZZuLsr d5DWld',
     'historical_sold':  'r6HknA uEPGHT',
     'ratings':          'shopee-rating-stars__lit',
-    'image':            'yvbeD6 KUUypF'
+    'image':            '_7DTxhh vc8g9F'
 }
 def parse_url_from_element(item):
     return item.get_attribute('href')
@@ -54,10 +54,12 @@ def parse_historical_sold_from_element(item):
     try:
         historical_sold = item.find_element(By.XPATH, f'.//div[@class="{FIELD_CLASS_MAP["historical_sold"]}"]').text
         historical_sold = historical_sold.split(' ')[-1]
+        if 'k' in historical_sold:
+            historical_sold = float(historical_sold[:-1].replace(',', '.'))*1000
     except:
         historical_sold = 0
         
-    return historical_sold
+    return int(historical_sold)
 
 def parse_ratings_from_element(item):
     rating_stars = item.find_elements(By.XPATH, f'.//div[@class="{FIELD_CLASS_MAP["ratings"]}"]')
@@ -69,5 +71,9 @@ def parse_ratings_from_element(item):
     return ratings
 
 def parse_image_from_element(item):
-    image = item.find_element(By.XPATH, f'.//div[@class="{FIELD_CLASS_MAP["image"]}"]/img')
-    return image.get_attribute('src')
+    try:
+        image = item.find_element(By.XPATH, f'.//img[@class="{FIELD_CLASS_MAP["image"]}"]')
+        image = image.get_attribute('src')
+    except:
+        image = None
+    return image
